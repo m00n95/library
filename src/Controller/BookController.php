@@ -2,14 +2,19 @@
 
 namespace App\Controller;
 
+use App\Entity\Book;
+use App\Form\BookFormType;
+use App\Repository\BookRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 class BookController extends AbstractController
 {
-    #[Route('/', name: 'app_book')]
-    public function index(): Response
+    #[Route('/', name: 'app_book_index', methods: ['GET'])]
+    public function index(BookRepository $bookRepository): Response
     {
         // Check if the user is authenticated
         if (!$this->getUser()) {
@@ -18,7 +23,29 @@ class BookController extends AbstractController
         }
 
         return $this->render('book/index.html.twig', [
-            'controller_name' => 'BookController',
+            'books' => $bookRepository->findAll(),
+        ]);
+    }
+
+    #[Route('/add', name:'app_book_add', methods: ['GET', 'POST'])]
+    public function add(Request $request, EntityManagerInterface $em): Response
+    {
+        $book = new Book();
+        $form = $this->createForm(BookFormType::class, $book);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $book->setCreatedAt(new \DateTime('now' , new \DateTimeZone('Europe/Paris')));
+            $book->setUser($this->getUser());
+
+            $em->persist($book);
+            $em->flush();
+            return $this->redirectToRoute('app_book_index');
+        }
+
+        return $this->render('book/add.html.twig', [
+            'book'=> $book,
+            'form'=> $form,
         ]);
     }
 }
