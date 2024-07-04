@@ -4,12 +4,43 @@
 
 {% block body %}
 
+<div class="container">
     {% if app.user %}
             <div class="mb-3">
                 Vous êtes connecté en tant que {{ app.user.userIdentifier }}, <a href="{{ path('app_logout') }}">Se déconnecter</a>
             </div>
     {% endif %}
 
-    <a href="{{ path('app_book_add') }}"><button>Ajouter un nouveau livre</button></a>
-   
+    <div class="d-flex justify-content-end">
+        <a href="{{ path('app_book_add') }}"><button class="btn btn-success">Ajouter un nouveau livre</button></a>
+    </div>
+
+    <h1>Mes livres</h1>
+
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Titre</th>
+                <th>Auteur</th>
+                <th>Description</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for book in books %}
+                <tr>
+                    <td>{{ book.title }}</td>
+                    <td>{{ book.author }}</td>
+                    <td>{{ book.description }}</td>
+                    <td>
+                        <form method="post" action="{{ path('app_book_delete', {'id': book.id}) }}" onsubmit="return confirm('Etes-vous sur de vouloir supprimer ce livre ?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ book.id) }}">
+                            <button class="btn btn-danger">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+</div>   
 {% endblock %}

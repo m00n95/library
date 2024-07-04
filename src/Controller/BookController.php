@@ -22,8 +22,13 @@ class BookController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
 
+        // Get the currently authenticated user
+        $user = $this->getUser();
+        // Find books associated with the current user
+        $books = $bookRepository->findBy(['user' => $user]);
+
         return $this->render('book/index.html.twig', [
-            'books' => $bookRepository->findAll(),
+            'books' => $books,
         ]);
     }
 
@@ -35,7 +40,9 @@ class BookController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Set the creation date of the book to the current time
             $book->setCreatedAt(new \DateTime('now' , new \DateTimeZone('Europe/Paris')));
+            // Associate the book with the current user
             $book->setUser($this->getUser());
 
             $em->persist($book);
@@ -47,5 +54,16 @@ class BookController extends AbstractController
             'book'=> $book,
             'form'=> $form,
         ]);
+    }
+
+    #[Route('/delete/{id}', name:'app_book_delete', methods: ['POST'])]
+    public function delete(Request $request, EntityManagerInterface $em, Book $book): Response
+    {
+        if ($this->isCsrfTokenValid('delete'.$book->getId(), $request->request->get('_token'))) {
+            $em->remove($book);
+            $em->flush();
+        }
+
+        return $this->redirectToRoute('app_book_index');
     }
 }
